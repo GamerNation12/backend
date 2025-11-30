@@ -23,6 +23,7 @@
     "dotenv": "^16.4.7",
     "jsonwebtoken": "^9.0.2",
     "prom-client": "^15.1.3",
+    "redis": "^5.10.0",
     "tmdb-ts": "^2.0.1",
     "trakt.tv": "^8.2.0",
     "tweetnacl": "^1.0.3",
