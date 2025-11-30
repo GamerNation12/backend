@@ -33,6 +33,8 @@ services:
       TRAKT_SECRET_ID: ${TRAKT_SECRET_ID:?Trakt secret ID required}
       CAPTCHA: ${CAPTCHA}
       CAPTCHA_CLIENT_KEY: ${CAPTCHA_CLIENT_KEY}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
       NODE_ENV: ${NODE_ENV:-production}
     env_file:
       - .env
