@@ -1,11 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider = "prisma-client"
+  output   = "../generated"
+  moduleFormat = "esm"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model bookmarks {
@@ -92,6 +92,7 @@ model user_settings {
   home_section_order        String[] @default([])
   manual_source_selection   Boolean  @default(false)
   enable_double_click_to_seek Boolean @default(false)
+  enable_auto_resume_on_playback_error Boolean @default(false)
 }
 
 model users {
@@ -135,7 +136,25 @@ model user_group_order {
   user_id   String   @db.VarChar(255)
   group_order String[] @default([])
   created_at DateTime @default(now()) @db.Timestamptz(0)
-  updated_at DateTime @updatedAt @db.Timestamptz(0)
+  updated_at DateTime @default(now()) @db.Timestamptz(0)
 
   @@unique([user_id], map: "user_group_order_user_id_unique")
+}
+
+model watch_history {
+  id             String   @id @db.Uuid
+  user_id        String   @db.VarChar(255)
+  tmdb_id        String   @db.VarChar(255)
+  season_id      String?  @db.VarChar(255)
+  episode_id     String?  @db.VarChar(255)
+  meta           Json
+  duration       BigInt
+  watched        BigInt
+  watched_at     DateTime @db.Timestamptz(0)
+  completed      Boolean  @default(false)
+  season_number  Int?
+  episode_number Int?
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(0)
+
+  @@unique([tmdb_id, user_id, season_id, episode_id], map: "watch_history_tmdb_id_user_id_season_id_episode_id_unique")
 }
