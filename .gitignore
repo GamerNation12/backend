@@ -12,3 +12,5 @@ pnpm-lock.yaml
 .metrics_monthly.json
 .metrics_daily.json
 generated
+.vercel
+.env*.local
