@@ -4,7 +4,10 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm install
+
+# Install curl for healthchecks (required by Coolify)
+RUN apk add --no-cache curl
 
 ARG DATABASE_URL
 ARG DATABASE_URL_DOCKER
