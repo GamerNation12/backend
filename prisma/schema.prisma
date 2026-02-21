@@ -95,6 +95,7 @@ model user_group_order {
 model user_settings {
   id                                   String   @id
   application_theme                    String?  @db.VarChar(255)
+  custom_theme                         Json?
   application_language                 String?  @db.VarChar(255)
   default_subtitle_language            String?  @db.VarChar(255)
   proxy_urls                           String[]
@@ -125,6 +126,8 @@ model user_settings {
   debrid_service                       String?  @db.VarChar(255)
   debrid_token                         String?  @db.VarChar(255)
   enable_auto_resume_on_playback_error Boolean  @default(false)
+  tidb_key                             String?  @db.VarChar(255)
+  enable_pause_overlay                 Boolean  @default(false)
 }
 
 model users {

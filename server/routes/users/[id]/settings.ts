@@ -1,13 +1,17 @@
 import { useAuth } from '~/utils/auth';
 import { z } from 'zod';
 import { scopedLogger } from '~/utils/logger';
-import type { user_settings } from '~/../generated/client';
 import { prisma } from '~/utils/prisma';
 
 const log = scopedLogger('user-settings');
 
 const userSettingsSchema = z.object({
   applicationTheme: z.string().nullable().optional(),
+  customTheme: z.object({
+    primary: z.string(),
+    secondary: z.string(),
+    tertiary: z.string(),
+  }).nullable().optional(),
   applicationLanguage: z.string().optional().default('en'),
   defaultSubtitleLanguage: z.string().nullable().optional(),
   proxyUrls: z.array(z.string()).nullable().optional(),
@@ -15,6 +19,7 @@ const userSettingsSchema = z.object({
   febboxKey: z.string().nullable().optional(),
   debridToken: z.string().nullable().optional(),
   debridService: z.string().nullable().optional(),
+  tidbKey: z.string().nullable().optional(),
   enableThumbnails: z.boolean().optional().default(false),
   enableAutoplay: z.boolean().optional().default(true),
   enableSkipCredits: z.boolean().optional().default(true),
@@ -38,6 +43,7 @@ const userSettingsSchema = z.object({
   manualSourceSelection: z.boolean().optional().default(false),
   enableDoubleClickToSeek: z.boolean().optional().default(false),
   enableAutoResumeOnPlaybackError: z.boolean().optional().default(false),
+  enablePauseOverlay: z.boolean().optional().default(false),
 });
 
 export default defineEventHandler(async event => {
@@ -66,13 +72,14 @@ export default defineEventHandler(async event => {
 
   if (event.method === 'GET') {
     try {
-      const settings = (await prisma.user_settings.findUnique({
+      const settings = await prisma.user_settings.findUnique({
         where: { id: userId },
-      })) as unknown as user_settings | null;
+      });
 
       return {
         id: userId,
         applicationTheme: settings?.application_theme || null,
+        customTheme: settings?.custom_theme || null,
         applicationLanguage: settings?.application_language || 'en',
         defaultSubtitleLanguage: settings?.default_subtitle_language || null,
         proxyUrls: settings?.proxy_urls.length === 0 ? null : settings?.proxy_urls || null,
@@ -80,6 +87,7 @@ export default defineEventHandler(async event => {
         febboxKey: settings?.febbox_key || null,
         debridToken: settings?.debrid_token || null,
         debridService: settings?.debrid_service || null,
+        tidbKey: settings?.tidb_key || null,
         enableThumbnails: settings?.enable_thumbnails ?? false,
         enableAutoplay: settings?.enable_autoplay ?? true,
         enableSkipCredits: settings?.enable_skip_credits ?? true,
@@ -102,6 +110,8 @@ export default defineEventHandler(async event => {
         homeSectionOrder: settings?.home_section_order || [],
         manualSourceSelection: settings?.manual_source_selection ?? false,
         enableDoubleClickToSeek: settings?.enable_double_click_to_seek ?? false,
+        enableAutoResumeOnPlaybackError: settings?.enable_auto_resume_on_playback_error ?? false,
+        enablePauseOverlay: settings?.enable_pause_overlay ?? false,
       };
     } catch (error) {
       log.error('Failed to get user settings', {
@@ -124,6 +134,7 @@ export default defineEventHandler(async event => {
 
       const createData = {
         application_theme: validatedBody.applicationTheme ?? null,
+        custom_theme: validatedBody.customTheme ?? null,
         application_language: validatedBody.applicationLanguage,
         default_subtitle_language: validatedBody.defaultSubtitleLanguage ?? null,
         proxy_urls: validatedBody.proxyUrls === null ? [] : validatedBody.proxyUrls || [],
@@ -131,6 +142,7 @@ export default defineEventHandler(async event => {
         febbox_key: validatedBody.febboxKey ?? null,
         debrid_token: validatedBody.debridToken ?? null,
         debrid_service: validatedBody.debridService ?? null,
+        tidb_key: validatedBody.tidbKey ?? null,
         enable_thumbnails: validatedBody.enableThumbnails,
         enable_autoplay: validatedBody.enableAutoplay,
         enable_skip_credits: validatedBody.enableSkipCredits,
@@ -153,12 +165,15 @@ export default defineEventHandler(async event => {
         home_section_order: validatedBody.homeSectionOrder || [],
         manual_source_selection: validatedBody.manualSourceSelection,
         enable_double_click_to_seek: validatedBody.enableDoubleClickToSeek,
-        enable_auto_resume_on_playback_error: false,
+        enable_auto_resume_on_playback_error: validatedBody.enableAutoResumeOnPlaybackError,
+        enable_pause_overlay: validatedBody.enablePauseOverlay,
       };
 
       const updateData: Partial<typeof createData> = {};
       if (Object.prototype.hasOwnProperty.call(body, 'applicationTheme'))
         updateData.application_theme = createData.application_theme;
+      if (Object.prototype.hasOwnProperty.call(body, 'customTheme'))
+        updateData.custom_theme = createData.custom_theme;
       if (Object.prototype.hasOwnProperty.call(body, 'applicationLanguage'))
         updateData.application_language = createData.application_language;
       if (Object.prototype.hasOwnProperty.call(body, 'defaultSubtitleLanguage'))
@@ -173,6 +188,8 @@ export default defineEventHandler(async event => {
         updateData.debrid_token = createData.debrid_token;
       if (Object.prototype.hasOwnProperty.call(body, 'debridService'))
         updateData.debrid_service = createData.debrid_service;
+      if (Object.prototype.hasOwnProperty.call(body, 'tidbKey'))
+        updateData.tidb_key = createData.tidb_key;
       if (Object.prototype.hasOwnProperty.call(body, 'enableThumbnails'))
         updateData.enable_thumbnails = createData.enable_thumbnails;
       if (Object.prototype.hasOwnProperty.call(body, 'enableAutoplay'))
@@ -217,6 +234,10 @@ export default defineEventHandler(async event => {
         updateData.manual_source_selection = createData.manual_source_selection;
       if (Object.prototype.hasOwnProperty.call(body, 'enableDoubleClickToSeek'))
         updateData.enable_double_click_to_seek = createData.enable_double_click_to_seek;
+      if (Object.prototype.hasOwnProperty.call(body, 'enableAutoResumeOnPlaybackError'))
+        updateData.enable_auto_resume_on_playback_error = createData.enable_auto_resume_on_playback_error;
+      if (Object.prototype.hasOwnProperty.call(body, 'enablePauseOverlay'))
+        updateData.enable_pause_overlay = createData.enable_pause_overlay;
 
       log.info('Preparing to upsert settings', {
         userId,
@@ -224,20 +245,21 @@ export default defineEventHandler(async event => {
         createData: { id: userId, ...createData },
       });
 
-      const settings = (await prisma.user_settings.upsert({
+      const settings = await prisma.user_settings.upsert({
         where: { id: userId },
         update: updateData,
         create: {
           id: userId,
           ...createData,
         },
-      })) as unknown as user_settings;
+      });
 
       log.info('Settings updated successfully', { userId });
 
       return {
         id: userId,
         applicationTheme: settings.application_theme,
+        customTheme: settings.custom_theme,
         applicationLanguage: settings.application_language,
         defaultSubtitleLanguage: settings.default_subtitle_language,
         proxyUrls: settings.proxy_urls.length === 0 ? null : settings.proxy_urls,
@@ -245,6 +267,7 @@ export default defineEventHandler(async event => {
         febboxKey: settings.febbox_key,
         debridToken: settings.debrid_token,
         debridService: settings.debrid_service,
+        tidbKey: settings.tidb_key,
         enableThumbnails: settings.enable_thumbnails,
         enableAutoplay: settings.enable_autoplay,
         enableSkipCredits: settings.enable_skip_credits,
@@ -267,6 +290,8 @@ export default defineEventHandler(async event => {
         homeSectionOrder: settings.home_section_order,
         manualSourceSelection: settings.manual_source_selection,
         enableDoubleClickToSeek: settings.enable_double_click_to_seek,
+        enableAutoResumeOnPlaybackError: settings.enable_auto_resume_on_playback_error,
+        enablePauseOverlay: settings.enable_pause_overlay,
       };
     } catch (error) {
       log.error('Failed to update user settings', {
