@@ -2,20 +2,26 @@ import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   try {
-    const rawAccount = process.env.FIREBASE_SERVICE_ACCOUNT as string;
-    const serviceAccount = JSON.parse(rawAccount);
-    
-    // 🔥 THE MAGIC FIX: Convert literal "\n" strings back into actual line breaks
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    const rawData = process.env.FIREBASE_SERVICE_ACCOUNT as string;
+    let serviceAccount;
+
+    // Check if the data is Base64 (Netlify) or raw JSON (Local)
+    if (rawData.startsWith('ew')) {
+      // Decode Base64 to string, then parse to JSON
+      const decoded = Buffer.from(rawData, 'base64').toString('utf8');
+      serviceAccount = JSON.parse(decoded);
+    } else {
+      // It's already JSON (likely local testing)
+      serviceAccount = JSON.parse(rawData);
     }
-    
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
-    console.log('🔥 Firebase Admin successfully initialized');
+    
+    console.log('🔥 Firebase Admin successfully initialized!');
   } catch (error) {
-    console.error('❌ Firebase Init Error: Make sure FIREBASE_SERVICE_ACCOUNT is a valid JSON string', error);
+    console.error('❌ Firebase Init Error:', error);
   }
 }
 
