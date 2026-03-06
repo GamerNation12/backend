@@ -1,7 +1,7 @@
 # BackendV2
 follow me on [GitHub](https://github.com/FifthWit)
 
-BackendV2 is a from scratch rewrite of movie-web's backend using [Nitro](https://nitro.build), and [Prisma](https://prisma.io). 
+BackendV2 is a from scratch rewrite of movie-web's backend using [Nitro](https://nitro.build), and [Firebase](https://firebase.google.com). 
 
 ## Deployment
 There are multiple supported ways to deploy BackendV2 based on your needs:

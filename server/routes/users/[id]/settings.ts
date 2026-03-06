@@ -1,7 +1,7 @@
 import { useAuth } from '~/utils/auth';
 import { z } from 'zod';
 import { scopedLogger } from '~/utils/logger';
-import { prisma } from '~/utils/prisma';
+import { prisma } from '~/utils/firebase';
 
 const log = scopedLogger('user-settings');
 

@@ -1,4 +1,4 @@
-import { recordHttpRequest } from '~/utils/metrics';
+// import { recordHttpRequest } from '~/utils/metrics';
 import { scopedLogger } from '~/utils/logger';
 
 const log = scopedLogger('metrics-middleware');
@@ -28,7 +28,7 @@ export default defineEventHandler(async event => {
     const statusCode = event.node.res.statusCode || 200;
 
     // Record the request metrics
-    recordHttpRequest(method, route, statusCode, duration);
+    // recordHttpRequest(method, route, statusCode, duration);
 
     log.debug('Recorded HTTP request metrics', {
       evt: 'http_metrics',

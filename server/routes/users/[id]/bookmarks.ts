@@ -1,6 +1,13 @@
 import { useAuth } from '~/utils/auth';
 import { z } from 'zod';
-import { bookmarks } from '@prisma/client';
+
+// Define bookmarks type since Prisma is removed
+interface bookmarks {
+  tmdb_id: number;
+  user_id: string;
+  created_at: Date;
+  updated_at: Date;
+}
 
 const bookmarkMetaSchema = z.object({
   title: z.string(),

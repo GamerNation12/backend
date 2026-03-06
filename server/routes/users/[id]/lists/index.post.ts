@@ -1,5 +1,5 @@
 import { useAuth } from '#imports';
-import { prisma } from '~/utils/prisma';
+import { prisma } from '~/utils/firebase';
 import { z } from 'zod';
 
 const listItemSchema = z.object({

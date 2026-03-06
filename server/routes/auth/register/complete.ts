@@ -3,6 +3,7 @@ import { useChallenge } from '~/utils/challenge';
 import { useAuth } from '~/utils/auth';
 import { randomUUID } from 'crypto';
 import { generateRandomNickname } from '~/utils/nickname';
+import { db } from '~/utils/firebase';
 
 const completeSchema = z.object({
   publicKey: z.string(),
@@ -39,11 +40,8 @@ export default defineEventHandler(async event => {
     'mnemonic'
   );
 
-  const existingUser = await prisma.users.findUnique({
-    where: { public_key: body.publicKey },
-  });
-
-  if (existingUser) {
+  const existingQuery = await db.collection('users').where('public_key', '==', body.publicKey).get();
+  if (!existingQuery.empty) {
     throw createError({
       statusCode: 409,
       message: 'A user with this public key already exists',
@@ -54,18 +52,20 @@ export default defineEventHandler(async event => {
   const now = new Date();
   const nickname = generateRandomNickname();
 
-  const user = await prisma.users.create({
-    data: {
-      id: userId,
-      namespace: body.namespace,
-      public_key: body.publicKey,
-      nickname,
-      created_at: now,
-      last_logged_in: now,
-      permissions: [],
-      profile: body.profile,
-    } as any,
-  });
+  const userData = {
+    id: userId,
+    namespace: body.namespace,
+    public_key: body.publicKey,
+    nickname,
+    created_at: now,
+    last_logged_in: now,
+    permissions: [],
+    profile: body.profile,
+  };
+
+  await db.collection('users').doc(userId).set(userData);
+
+  const user = userData;
 
   const auth = useAuth();
   const userAgent = getRequestHeader(event, 'user-agent');

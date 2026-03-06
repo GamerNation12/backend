@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { useChallenge } from '~/utils/challenge';
+import { db } from '~/utils/firebase';
 
 const startSchema = z.object({
   publicKey: z.string(),
@@ -16,16 +17,14 @@ export default defineEventHandler(async event => {
     });
   }
 
-  const user = await prisma.users.findUnique({
-    where: { public_key: body.publicKey },
-  });
-
-  if (!user) {
+  const querySnapshot = await db.collection('users').where('public_key', '==', body.publicKey).get();
+  if (querySnapshot.empty) {
     throw createError({
       statusCode: 401,
       message: 'User cannot be found',
     });
   }
+  const user = querySnapshot.docs[0].data();
 
   const challenge = useChallenge();
   const challengeCode = await challenge.createChallengeCode('login', 'mnemonic');

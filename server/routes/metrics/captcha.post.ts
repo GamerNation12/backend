@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { getMetrics, recordCaptchaMetrics } from '~/utils/metrics';
+// import { getMetrics, recordCaptchaMetrics } from '~/utils/metrics';
 import { scopedLogger } from '~/utils/logger';
-import { setupMetrics } from '~/utils/metrics';
+// import { setupMetrics } from '~/utils/metrics';
 
 const log = scopedLogger('metrics-captcha');
 
@@ -10,7 +10,7 @@ let isInitialized = false;
 async function ensureMetricsInitialized() {
   if (!isInitialized) {
     log.info('Initializing metrics from captcha endpoint...', { evt: 'init_start' });
-    await setupMetrics();
+    // await setupMetrics();
     isInitialized = true;
     log.info('Metrics initialized from captcha endpoint', { evt: 'init_complete' });
   }
@@ -27,7 +27,7 @@ export default defineEventHandler(async event => {
       })
       .parse(body);
 
-    recordCaptchaMetrics(validatedBody.success);
+    // recordCaptchaMetrics(validatedBody.success);
 
     return true;
   } catch (error) {

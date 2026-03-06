@@ -1,4 +1,4 @@
-import { prisma } from './prisma';
+import { db } from './firebase';
 import jwt from 'jsonwebtoken';
 const { sign, verify } = jwt;
 import { randomUUID } from 'crypto';
@@ -8,14 +8,12 @@ const SESSION_EXPIRY_MS = 21 * 24 * 60 * 60 * 1000;
 
 export function useAuth() {
   const getSession = async (id: string) => {
-    const session = await prisma.sessions.findUnique({
-      where: { id },
-    });
-
+    const doc = await db.collection('sessions').doc(id).get();
+    if (!doc.exists) return null;
+    const session = doc.data();
     if (!session) return null;
     if (new Date(session.expires_at) < new Date()) return null;
-
-    return session;
+    return { id, ...session };
   };
 
   const getSessionAndBump = async (id: string) => {
@@ -25,13 +23,12 @@ export function useAuth() {
     const now = new Date();
     const expiryDate = new Date(now.getTime() + SESSION_EXPIRY_MS);
 
-    return await prisma.sessions.update({
-      where: { id },
-      data: {
-        accessed_at: now,
-        expires_at: expiryDate,
-      },
+    await db.collection('sessions').doc(id).update({
+      accessed_at: now,
+      expires_at: expiryDate,
     });
+
+    return { ...session, accessed_at: now, expires_at: expiryDate };
   };
 
   const makeSession = async (user: string, device: string, userAgent?: string) => {
@@ -39,18 +36,21 @@ export function useAuth() {
 
     const now = new Date();
     const expiryDate = new Date(now.getTime() + SESSION_EXPIRY_MS);
+    const id = randomUUID();
 
-    return await prisma.sessions.create({
-      data: {
-        id: randomUUID(),
-        user,
-        device,
-        user_agent: userAgent,
-        created_at: now,
-        accessed_at: now,
-        expires_at: expiryDate,
-      },
-    });
+    const sessionData = {
+      id,
+      user,
+      device,
+      user_agent: userAgent,
+      created_at: now,
+      accessed_at: now,
+      expires_at: expiryDate,
+    };
+
+    await db.collection('sessions').doc(id).set(sessionData);
+
+    return sessionData;
   };
 
   const makeSessionToken = (session: { id: string }) => {

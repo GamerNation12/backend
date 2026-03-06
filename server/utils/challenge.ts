@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { prisma } from './prisma';
+import { db } from './firebase';
 import nacl from 'tweetnacl';
 
 // Challenge code expires in 10 minutes
@@ -9,16 +9,19 @@ export function useChallenge() {
   const createChallengeCode = async (flow: string, authType: string) => {
     const now = new Date();
     const expiryDate = new Date(now.getTime() + CHALLENGE_EXPIRY_MS);
+    const code = randomUUID();
 
-    return await prisma.challenge_codes.create({
-      data: {
-        code: randomUUID(),
-        flow,
-        auth_type: authType,
-        created_at: now,
-        expires_at: expiryDate,
-      },
-    });
+    const data = {
+      code,
+      flow,
+      auth_type: authType,
+      created_at: now,
+      expires_at: expiryDate,
+    };
+
+    await db.collection('challenge_codes').doc(code).set(data);
+
+    return data;
   };
 
   const verifyChallengeCode = async (
@@ -28,10 +31,11 @@ export function useChallenge() {
     flow: string,
     authType: string
   ) => {
-    const challengeCode = await prisma.challenge_codes.findUnique({
-      where: { code },
-    });
-
+    const doc = await db.collection('challenge_codes').doc(code).get();
+    if (!doc.exists) {
+      throw new Error('Invalid challenge code');
+    }
+    const challengeCode = doc.data();
     if (!challengeCode) {
       throw new Error('Invalid challenge code');
     }
@@ -49,9 +53,7 @@ export function useChallenge() {
       throw new Error('Invalid signature');
     }
 
-    await prisma.challenge_codes.delete({
-      where: { code },
-    });
+    await db.collection('challenge_codes').doc(code).delete();
 
     return true;
   };

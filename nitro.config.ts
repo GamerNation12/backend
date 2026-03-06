@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
 config();
 import { version } from './server/utils/config';
+
 //https://nitro.unjs.io/config
 export default defineNitroConfig({
   srcDir: 'server',
@@ -9,6 +10,18 @@ export default defineNitroConfig({
     asyncContext: true,
     tasks: true,
   },
+  
+  // 1. ADDED ROUTE RULES FOR CORS
+  routeRules: {
+    '/auth/**': { 
+      cors: true, 
+      headers: { 
+        'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS' 
+      } 
+    },
+    // Add any other base API paths your frontend calls here
+  },
+
   scheduledTasks: {
     // Daily cron jobs (midnight)
     '0 0 * * *': ['jobs:clear-metrics:daily'],
@@ -17,6 +30,7 @@ export default defineNitroConfig({
     // Monthly cron jobs (1st of month at midnight)
     '0 0 1 * *': ['jobs:clear-metrics:monthly']
   },
+  
   runtimeConfig: {
     public: {
       meta: {
@@ -33,5 +47,7 @@ export default defineNitroConfig({
       clientId: process.env.TRAKT_CLIENT_ID,
       clientSecret: process.env.TRAKT_SECRET_ID,
     },
+    
+    // 2. Firebase is now loaded from file
   },
 });

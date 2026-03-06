@@ -1,12 +1,17 @@
 import { useAuth } from '~/utils/auth';
+import { db } from '~/utils/firebase';
 
 export default defineEventHandler(async event => {
   const session = await useAuth().getCurrentSession();
 
-  const user = await prisma.users.findUnique({
-    where: { id: session.user },
-  });
-
+  const doc = await db.collection('users').doc(session.user).get();
+  if (!doc.exists) {
+    throw createError({
+      statusCode: 404,
+      message: 'User not found',
+    });
+  }
+  const user = doc.data();
   if (!user) {
     throw createError({
       statusCode: 404,

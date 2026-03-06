@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { getMetrics, recordProviderMetrics } from '~/utils/metrics';
+// import { getMetrics, recordProviderMetrics } from '~/utils/metrics';
 import { scopedLogger } from '~/utils/logger';
-import { setupMetrics } from '~/utils/metrics';
+// import { setupMetrics } from '~/utils/metrics';
 
 const log = scopedLogger('metrics-providers');
 
@@ -10,7 +10,7 @@ let isInitialized = false;
 async function ensureMetricsInitialized() {
   if (!isInitialized) {
     log.info('Initializing metrics from providers endpoint...', { evt: 'init_start' });
-    await setupMetrics();
+    // await setupMetrics();
     isInitialized = true;
     log.info('Metrics initialized from providers endpoint', { evt: 'init_complete' });
   }
@@ -53,7 +53,7 @@ export default defineEventHandler(async event => {
     const hostname = event.node.req.headers.origin?.slice(0, 255) ?? '<UNKNOWN>';
 
     // Use the simplified recordProviderMetrics function to handle all metrics recording
-    recordProviderMetrics(validatedBody.items, hostname, validatedBody.tool);
+    // recordProviderMetrics(validatedBody.items, hostname, validatedBody.tool);
 
     return true;
   } catch (error) {
