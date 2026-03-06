@@ -1,16 +1,17 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import admin from 'firebase-admin';
 
-if (!getApps().length) {
-  const serviceAccount = JSON.parse(readFileSync(join(process.cwd(), 'firebase-service-account.json'), 'utf8'));
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
+if (!admin.apps.length) {
+  try {
+    // We use the environment variable instead of a physical file!
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string);
+    
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log('🔥 Firebase Admin successfully initialized');
+  } catch (error) {
+    console.error('❌ Firebase Init Error: Make sure FIREBASE_SERVICE_ACCOUNT is a valid JSON string in your Netlify env vars', error);
+  }
 }
 
-export const db = getFirestore();
-
-// Dummy prisma to prevent build errors during migration
-export const prisma = {} as any;
+export const db = admin.firestore();
